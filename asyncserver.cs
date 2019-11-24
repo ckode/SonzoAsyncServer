@@ -50,7 +50,7 @@ namespace AsyncServer {
          * logging to find the issue.
          * 
          */
-        public static AutoResetEvent allDone = new AutoResetEvent(false);
+        public static ManualResetEvent allDone = new ManualResetEvent(false);
         public AsyncSocketListener() { }
         public Dictionary<string, Client> players = new Dictionary<string, Client>();
         public int client_count;
@@ -58,7 +58,7 @@ namespace AsyncServer {
 
 
         public void StartListening(IPAddress ip, int port, int max_conns) { 
-            byte[] bytes = new byte[1024000];
+            byte[] bytes = new byte[1024];
             IPAddress _ip = ip;
             int _port = port;
             int _max_connections = max_conns;
@@ -68,10 +68,10 @@ namespace AsyncServer {
 
             try {
                 listener.Bind(_ep);
-                listener.Listen(_max_connections);
                 Console.WriteLine("Starting listener...");
+                listener.Listen(_max_connections);
+                Console.WriteLine("Waiting for connection...");
                 while (true) {
-                    
                     allDone.Set();
                     listener.BeginAccept(new AsyncCallback(AcceptCallback), listener);
                     allDone.WaitOne();
@@ -83,6 +83,7 @@ namespace AsyncServer {
 
         public void AcceptCallback(IAsyncResult AsyncResult) {
             allDone.Set();
+            Console.WriteLine("Here making bullshit...");
             Socket listener = (Socket)AsyncResult.AsyncState;
             Socket handler = listener.EndAccept(AsyncResult);
             Client client = new Client();
@@ -118,7 +119,7 @@ namespace AsyncServer {
         }
 
         public void Send(Client player, String data) {
-            byte[] databytes = Encoding.ASCII.GetBytes(data + '\n');
+            byte[] databytes = Encoding.ASCII.GetBytes(data);
             Socket handler = player.socket;
             handler.BeginSend(databytes, 0, databytes.Length, 0, new AsyncCallback(SendCallback), player);
             player.buffer.Clear();
@@ -129,7 +130,7 @@ namespace AsyncServer {
                 Send(player.Value, data);
             }
         }
-        // ISSUES
+
         private void SendCallback(IAsyncResult AsyncResult) {
             try {
                 Client client = (Client)AsyncResult.AsyncState;
@@ -140,7 +141,6 @@ namespace AsyncServer {
                 Console.WriteLine(e.ToString());
             }
         }
-
 
         public static int Main(String[] args) {
             AsyncSocketListener server = new AsyncSocketListener();
