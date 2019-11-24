@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# Manually added
+.vs
+bin
+obj
+*.csproj
+*.sln
+
+
